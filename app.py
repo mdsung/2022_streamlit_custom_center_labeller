@@ -19,4 +19,5 @@ def load_image(image_path):
 
 st.title("Testing Streamlit custom components")
 sample_image = load_image("image/20220426.161203.996.CD8-007_RI MIP.tiff")
-st_custom_image_labeller(sample_image)
+output = st_custom_image_labeller(sample_image)
+st.write(output)  # type:ignore

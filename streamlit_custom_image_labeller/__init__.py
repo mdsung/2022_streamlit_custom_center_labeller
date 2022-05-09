@@ -68,6 +68,6 @@ def st_custom_image_labeller(
     )
     # Return a cropped image using the box from the frontend
     if component_value:
-        return component_value["point"]
+        return component_value
     else:
-        return point
+        return {"x": point_x, "y": point_y}
