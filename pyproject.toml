@@ -8,6 +8,8 @@ authors = ["MinDong <mdskylover@gmail.com>"]
 python = "^3.9"
 streamlit = "^1.9.0"
 watchdog = "^2.1.7"
+tifffile = "^2022.5.4"
+opencv-python = "^4.5.5"
 
 [tool.poetry.dev-dependencies]
 black = "^22.3.0"

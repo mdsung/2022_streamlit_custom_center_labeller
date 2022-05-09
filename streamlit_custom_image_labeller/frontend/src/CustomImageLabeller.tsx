@@ -40,7 +40,7 @@ const getImage = (canvasWidth:number, canvasHeight:number, imageData: Uint8Clamp
 }
 const addPoint = (canvas:fabric.Canvas, pointX:number, pointY:number, pointColor:string) => {
     const pointObj = new fabric.Circle({
-            radius: 2,
+            radius: 3,
             fill: pointColor,
             left: pointX,
             top: pointY,
