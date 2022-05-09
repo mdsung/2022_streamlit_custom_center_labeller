@@ -74,10 +74,15 @@ with col1:
                 sample_3d_image, idx=st.session_state["center"].z, axis=0
             )
         ),
-        point=(st.session_state["center"].y, st.session_state["center"].x), # numpy array axis is not matching with mouse point axis
+        point=(
+            st.session_state["center"].y,
+            st.session_state["center"].x,
+        ),  # numpy array axis is not matching with mouse point axis
     )
     st.write(output)
-    st.session_state["center"].y = output["x"] # numpy array axis is not matching with mouse point axis
+    st.session_state["center"].y = output[
+        "x"
+    ]  # numpy array axis is not matching with mouse point axis
     st.session_state["center"].x = output["y"]
 
 
