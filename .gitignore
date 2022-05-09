@@ -1,0 +1,6 @@
+.venv/
+.vscode/
+image/
+.DS_Store
+**/__pycache__/
+**/node_modules/
