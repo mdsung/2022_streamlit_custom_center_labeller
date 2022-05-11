@@ -38,12 +38,12 @@ const getImage = (canvasWidth:number, canvasHeight:number, imageData: Uint8Clamp
     }    
     return dataUri
 }
-const addPoint = (canvas:fabric.Canvas, pointX:number, pointY:number, pointColor:string) => {
+const addPoint = (canvas:fabric.Canvas, point:PointProps, pointColor:string) => {
     const pointObj = new fabric.Circle({
             radius: 3,
             fill: pointColor,
-            left: pointX,
-            top: pointY,
+            left: point.x,
+            top: point.y,
             selectable: true,
             originX: "center",
             originY: "center",
@@ -52,12 +52,13 @@ const addPoint = (canvas:fabric.Canvas, pointX:number, pointY:number, pointColor
             lockScalingY: true,
         })          
     canvas.add(pointObj);
+    return canvas
 }
 
-const initCanvas = ({ canvasWidth, canvasHeight, imageData, pointX, pointY, pointColor }: {canvasWidth: number; canvasHeight: number; imageData: Uint8ClampedArray, pointX:number, pointY:number, pointColor:string }) => {
+const initCanvas = (canvasWidth:number, canvasHeight:number, imageData:Uint8ClampedArray, point:PointProps, pointColor:string) => {
     const datauri = getImage(canvasWidth, canvasHeight, imageData)
-    const canvas = new fabric.Canvas("canvas", {height :canvasHeight, width:canvasWidth, backgroundImage: datauri})
-    addPoint(canvas, pointX, pointY, pointColor)
+    let canvas = new fabric.Canvas("canvas", {height :canvasHeight, width:canvasWidth, backgroundImage: datauri})
+    canvas = addPoint(canvas, point, pointColor)
     return canvas
 }
 
@@ -65,21 +66,20 @@ const CustomImageLabeller = (props: ComponentProps) => {
     const { canvasWidth, canvasHeight, imageData }: PythonArgs = props.args
     const pointColor = props.args.pointColor
     const [mode, setMode ] = useState<string>("light")
-    const [, setCanvas ] = useState<fabric.Canvas|null>(null)
-    const [ pointX, setPointX ] = useState<number>(props.args.point.x)
-    const [ pointY, setPointY ] = useState<number>(props.args.point.y)
-
+    const [point, setPoint] = useState<PointProps>({x:props.args.point.x, y:props.args.point.y})
+    const [canvas, setCanvas ] = useState<fabric.Canvas>(initCanvas(canvasWidth, canvasHeight, imageData, point, pointColor))
+    
+    canvas.on('mouse:down', (options):void => {   
+        setPoint({...point, x:options.e.clientX, y:options.e.clientY})
+        console.log(point)
+    });
+    
     useEffect(() => {
-        const canvas = initCanvas({ canvasWidth, canvasHeight, imageData, pointX, pointY, pointColor })
-        canvas.on('mouse:down', (options):void => {
-            setPointX(options.e.clientX)
-            setPointY(options.e.clientY)
-        });
-        setCanvas(canvas)
+        setCanvas(initCanvas(canvasWidth, canvasHeight, imageData, point, pointColor))
         Streamlit.setFrameHeight()
-        Streamlit.setComponentValue({x:pointX, y:pointY});
-
-    }, [pointX, pointY])
+        Streamlit.setComponentValue({x:point.x, y:point.y});
+    }, [point, imageData])
+    
     return (
         <>
             <canvas

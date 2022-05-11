@@ -56,12 +56,14 @@ _3D_image_path = Path("image/20220426.173416.075.CD8_2-001_RI Tomogram.tiff")
 sample_2d_image = _2DTomocubeImage(_2D_image_path).process()
 sample_3d_image = _3DTomocubeImage(_3D_image_path).process()
 
-if "center" not in st.session_state:
-    image_size = sample_3d_image.shape
-    st.session_state["center"] = Point(
-        image_size[1] // 2, image_size[2] // 2, image_size[0] // 2
-    )
+image_size = sample_3d_image.shape
 
+if "x" not in st.session_state:
+    st.session_state['x'] = image_size[1]//2
+if "y" not in st.session_state:
+    st.session_state['y'] = image_size[1]//2
+if "z" not in st.session_state:
+    st.session_state['z'] = image_size[1]//2
 
 st.title("Tomocube Cell Center Labeller")
 col1, col2 = st.columns(2)
@@ -71,19 +73,17 @@ with col1:
     output = st_custom_image_labeller(
         TomocubeImage.numpy_to_image(
             _3DTomocubeImage.slice_axis(
-                sample_3d_image, idx=st.session_state["center"].z, axis=0
+                sample_3d_image, idx=st.session_state["z"], axis=0
             )
         ),
         point=(
-            st.session_state["center"].y,
-            st.session_state["center"].x,
+            st.session_state["y"],
+            st.session_state["x"],
         ),  # numpy array axis is not matching with mouse point axis
     )
     st.write(output)
-    st.session_state["center"].y = output[
-        "x"
-    ]  # numpy array axis is not matching with mouse point axis
-    st.session_state["center"].x = output["y"]
+    st.session_state["y"] = output["x"]
+    st.session_state["x"] = output["y"]
 
 
 with col2:
@@ -91,41 +91,14 @@ with col2:
     output2 = st_custom_image_labeller(
         TomocubeImage.numpy_to_image(
             _3DTomocubeImage.slice_axis(
-                sample_3d_image, idx=st.session_state["center"].y, axis=2
+                sample_3d_image, idx=st.session_state["y"], axis=2
             )
         ),
-        point=(st.session_state["center"].x, st.session_state["center"].z),
+        point=(st.session_state["x"], st.session_state["z"]),
     )
     st.write(output2)
-    st.session_state["center"].z = output2["y"]
-
-st.write(st.session_state["center"])
-# 3d viewer
+    st.session_state["z"] = output2["y"]
 
 
-def read_multiple_tiff(filename):
-    image = tifffile.imread(filename)
-    norm = np.zeros((image.shape[1], image.shape[2]))
-    final = cv.normalize(image, norm, 0, 255, cv.NORM_MINMAX)
-    return final
 
 
-image = read_multiple_tiff(_3D_image_path)
-
-## streamlit code
-st.subheader("Morphology")
-col1, col2, col3 = st.columns(3)
-z = col1.slider(
-    "z-axis", 0, image.shape[0] - 1, value=st.session_state["center"].z
-)
-col1.image(image[z, :, :], use_column_width=True, clamp=True)
-
-x = col2.slider(
-    "x-axis", 0, image.shape[1] - 1, value=st.session_state["center"].x
-)
-col2.image(image[:, x, :], use_column_width=True, clamp=True)
-
-y = col3.slider(
-    "y-axis", 0, image.shape[2] - 1, value=st.session_state["center"].y
-)
-col3.image(image[:, :, y], use_column_width=True, clamp=True)
