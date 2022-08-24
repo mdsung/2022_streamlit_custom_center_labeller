@@ -23,14 +23,13 @@ const CustomImageLabeller = (props: ComponentProps) => {
     const pointColor = props.args.pointColor
     const { canvasWidth, canvasHeight, imageData }: PythonArgs = props.args
 
-    
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const [point, setPoint] = useState<PointProps>({x:props.args.point.x, y:props.args.point.y})
     const [image, setImage] = useState<Uint8ClampedArray>(imageData)
 
     const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) =>{
         setPoint({...point, x:e.clientX, y:e.clientY})
-        Streamlit.setComponentValue({x:point.x, y:point.y});
+        console.log(e.clientX, e.clientY)
     }
 
     useEffect(() => {
@@ -41,9 +40,10 @@ const CustomImageLabeller = (props: ComponentProps) => {
         context!.putImageData(idata, 0, 0)
         context!.fillStyle = pointColor;
         context!.fillRect(point.x, point.y, 3, 3)
-        
         Streamlit.setFrameHeight()
-    }, [point, image])
+        console.log(point.x, point.y)
+        Streamlit.setComponentValue({x:point.x, y:point.y});
+    }, [point])
     
     return (
         <div>
