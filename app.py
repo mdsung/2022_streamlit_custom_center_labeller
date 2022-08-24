@@ -55,7 +55,7 @@ def set_point_state(image_size):
         )
 
 
-def app(image_3d):
+def two_center_labeller(image_3d):
     if "output1" not in st.session_state:
         st.session_state["output1"] = {}
     if "output2" not in st.session_state:
@@ -98,7 +98,7 @@ def app(image_3d):
 
     with col2:
         logging.info("render col2")
-        st.header("HT - ZX")
+        st.header("HT - ZY")
         output2 = st_custom_image_labeller(
             st.session_state["zx_image"],
             point=(st.session_state["point"].x, st.session_state["point"].z),
@@ -115,7 +115,6 @@ def app(image_3d):
                     image_3d, idx=st.session_state["output2"].get("y"), axis=0
                 )
             )
-            st.experimental_rerun()
         st.write(output2)
         st.write(st.session_state["output2"])
 
@@ -129,11 +128,13 @@ def render_title():
 
 if __name__ == "__main__":
     render_title()
-    image_path = Path("image/20220610.161316.760.CD4_2-001_RI Tomogram.tiff")
+    image_path = Path(
+        "streamlit_custom_center_labeller/image/20220610.161316.760.CD4_2-001_RI Tomogram.tiff"
+    )
 
     if ("image_path" not in st.session_state) or (
         image_path != st.session_state["image_path"]
     ):
         st.session_state["image_path"] = image_path
         st.session_state["image_3d"] = _3DTomocubeImage(image_path).process()
-    app(st.session_state["image_3d"])
+    two_center_labeller(st.session_state["image_3d"])

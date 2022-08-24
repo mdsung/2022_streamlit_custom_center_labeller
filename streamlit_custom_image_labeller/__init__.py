@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 import streamlit.components.v1 as components
 
-_RELEASE = False
+_RELEASE = True
 
 if not _RELEASE:
     _component_func = components.declare_component(
@@ -21,24 +21,7 @@ else:
 def st_custom_image_labeller(
     resized_img, point_color="red", point=None, key=None
 ):
-    """Create a new instance of "st_img_label".
-    Parameters
-    ----------
-    img_file: PIL.Image
-        The image to be croppepd
-    point_color: string
-        The color of the pointer's point. Defaults to blue.
-    rects: list
-        list of points that already exists.
-    key: str or None
-        An optional key that uniquely identifies this component. If this is
-        None, and the component's arguments are changed, the component will
-        be re-mounted in the Streamlit frontend and lose its current state.
-    Returns
-    -------
-    points: list
-        list of points.
-    """
+
     # Get arguments to send to frontend
     canvasWidth = resized_img.width
     canvasHeight = resized_img.height
