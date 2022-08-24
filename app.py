@@ -1,7 +1,7 @@
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 
-import cv2 as cv
 import numpy as np
 import streamlit as st
 import tifffile
@@ -22,6 +22,7 @@ class TomocubeImage:
         self.image_path = image_path
 
     def process(self):
+        logging.info("Processing image to object")
         image_arr = self.read_image()
         image_arr = self.normalize_img(image_arr)
         # return self.numpy_to_image(image_arr)
@@ -39,66 +40,100 @@ class TomocubeImage:
         return Image.fromarray(img_arr)
 
 
-class _2DTomocubeImage(TomocubeImage):
-    ...
-
-
 class _3DTomocubeImage(TomocubeImage):
     @staticmethod
     def slice_axis(img_arr: np.ndarray, idx: int, axis: int) -> np.ndarray:
+        logging.info(f"Slicing image array - {idx} on axis {axis}")
         return img_arr.take(indices=idx, axis=axis)
 
 
-_2D_image_path = Path("image/20220426.173416.075.CD8_2-001_RI MIP.tiff")
-_3D_image_path = Path("image/20220426.173416.075.CD8_2-001_RI Tomogram.tiff")
+def set_point_state(image_size):
+    if "point" not in st.session_state:
+        logging.info("Set default point")
+        st.session_state["point"] = Point(
+            image_size[1] // 2, image_size[2] // 2, image_size[0] // 2
+        )
 
-# sample_image_mip = load_2d_image(_3D_image_path)
-sample_2d_image = _2DTomocubeImage(_2D_image_path).process()
-sample_3d_image = _3DTomocubeImage(_3D_image_path).process()
 
-image_size = sample_3d_image.shape
+def app(image_3d):
+    if "output1" not in st.session_state:
+        st.session_state["output1"] = {}
+    if "output2" not in st.session_state:
+        st.session_state["output2"] = {}
+    set_point_state(image_3d.shape)
 
-if "x" not in st.session_state:
-    st.session_state['x'] = image_size[1]//2
-if "y" not in st.session_state:
-    st.session_state['y'] = image_size[1]//2
-if "z" not in st.session_state:
-    st.session_state['z'] = image_size[1]//2
-
-st.title("Tomocube Cell Center Labeller")
-col1, col2 = st.columns(2)
-
-with col1:
-    st.header("HT - XY")
-    output = st_custom_image_labeller(
-        TomocubeImage.numpy_to_image(
-            _3DTomocubeImage.slice_axis(
-                sample_3d_image, idx=st.session_state["z"], axis=0
-            )
-        ),
-        point=(
-            st.session_state["y"],
-            st.session_state["x"],
-        ),  # numpy array axis is not matching with mouse point axis
+    col1, col2 = st.columns(2)
+    st.session_state["xy_image"] = TomocubeImage.numpy_to_image(
+        _3DTomocubeImage.slice_axis(
+            image_3d, idx=st.session_state["point"].z, axis=0
+        )
     )
-    st.write(output)
-    st.session_state["y"] = output["x"]
-    st.session_state["x"] = output["y"]
-
-
-with col2:
-    st.header("HT - YZ")
-    output2 = st_custom_image_labeller(
-        TomocubeImage.numpy_to_image(
-            _3DTomocubeImage.slice_axis(
-                sample_3d_image, idx=st.session_state["y"], axis=2
-            )
-        ),
-        point=(st.session_state["x"], st.session_state["z"]),
+    st.session_state["zx_image"] = TomocubeImage.numpy_to_image(
+        _3DTomocubeImage.slice_axis(
+            image_3d, idx=st.session_state["point"].y, axis=2
+        )
     )
-    st.write(output2)
-    st.session_state["z"] = output2["y"]
+
+    with col1:
+        logging.info("render col1")
+        st.header("HT - XY")
+        output1 = st_custom_image_labeller(
+            st.session_state["xy_image"],
+            point=(st.session_state["point"].y, st.session_state["point"].x),
+        )
+        if output1 != st.session_state["output1"]:
+            st.session_state["output1"] = output1
+            st.session_state["point"] = Point(
+                st.session_state["output1"]["y"],
+                st.session_state["output1"]["x"],
+                st.session_state["point"].z,
+            )
+            st.session_state["zx_image"] = TomocubeImage.numpy_to_image(
+                _3DTomocubeImage.slice_axis(
+                    image_3d, idx=st.session_state["output1"]["x"], axis=0
+                )
+            )
+        st.write(output1)
+        st.write(st.session_state["output1"])
+
+    with col2:
+        logging.info("render col2")
+        st.header("HT - ZX")
+        output2 = st_custom_image_labeller(
+            st.session_state["zx_image"],
+            point=(st.session_state["point"].x, st.session_state["point"].z),
+        )
+        if output2 != st.session_state["output2"]:
+            st.session_state["output2"] = output2
+            st.session_state["point"] = Point(
+                st.session_state["output2"]["x"],
+                st.session_state["point"].y,
+                st.session_state["output2"]["y"],
+            )
+            st.session_state["xy_image"] = TomocubeImage.numpy_to_image(
+                _3DTomocubeImage.slice_axis(
+                    image_3d, idx=st.session_state["output2"].get("y"), axis=0
+                )
+            )
+            st.experimental_rerun()
+        st.write(output2)
+        st.write(st.session_state["output2"])
+
+    logging.info("=" * 100)
 
 
+def render_title():
+    logging.info("Render title")
+    st.title("Tomocube Cell Center Labeller")
 
 
+if __name__ == "__main__":
+    render_title()
+    image_path = Path("image/20220610.161316.760.CD4_2-001_RI Tomogram.tiff")
+
+    if ("image_path" not in st.session_state) or (
+        image_path != st.session_state["image_path"]
+    ):
+        st.session_state["image_path"] = image_path
+        st.session_state["image_3d"] = _3DTomocubeImage(image_path).process()
+    app(st.session_state["image_3d"])

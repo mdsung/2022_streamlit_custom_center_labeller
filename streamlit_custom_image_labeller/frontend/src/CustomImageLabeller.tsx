@@ -1,15 +1,14 @@
-import React, { useEffect, useState} from "react"
+import React, { useEffect, useState, useRef} from "react"
 import {
     ComponentProps,
     Streamlit,
     withStreamlitConnection,
 } from "streamlit-component-lib"
-import { fabric } from "fabric"
-import styles from "./StreamlitImgLabel.module.css"
+// import { fabric } from "fabric"
 
 interface PointProps {
-  x:number
-  y:number
+    x:number
+    y:number
 }
 
 interface PythonArgs {
@@ -20,75 +19,39 @@ interface PythonArgs {
     imageData: Uint8ClampedArray
 }
 
-const getImage = (canvasWidth:number, canvasHeight:number, imageData: Uint8ClampedArray):string =>{
-    let dataUri: any
-    const invisCanvas = document.createElement("canvas")
-    invisCanvas.width = canvasWidth
-    invisCanvas.height = canvasHeight
-    const ctx = invisCanvas.getContext("2d")
-    if (ctx) {
-        const idata = ctx.createImageData(canvasWidth, canvasHeight)
-        // set our buffer as source
-        idata.data.set(imageData)
-        // update canvas with new data
-        ctx.putImageData(idata, 0, 0)
-        dataUri = invisCanvas.toDataURL()
-    } else {
-        dataUri = ""
-    }    
-    return dataUri
-}
-const addPoint = (canvas:fabric.Canvas, point:PointProps, pointColor:string) => {
-    const pointObj = new fabric.Circle({
-            radius: 3,
-            fill: pointColor,
-            left: point.x,
-            top: point.y,
-            selectable: true,
-            originX: "center",
-            originY: "center",
-            hoverCursor: "auto",
-            lockScalingX: true,
-            lockScalingY: true,
-        })          
-    canvas.add(pointObj);
-    return canvas
-}
-
-const initCanvas = (canvasWidth:number, canvasHeight:number, imageData:Uint8ClampedArray, point:PointProps, pointColor:string) => {
-    const datauri = getImage(canvasWidth, canvasHeight, imageData)
-    let canvas = new fabric.Canvas("canvas", {height :canvasHeight, width:canvasWidth, backgroundImage: datauri})
-    canvas = addPoint(canvas, point, pointColor)
-    return canvas
-}
-
 const CustomImageLabeller = (props: ComponentProps) => {
-    const { canvasWidth, canvasHeight, imageData }: PythonArgs = props.args
     const pointColor = props.args.pointColor
-    const [mode, setMode ] = useState<string>("light")
+    const { canvasWidth, canvasHeight, imageData }: PythonArgs = props.args
+
+    const canvasRef = useRef<HTMLCanvasElement>(null)
     const [point, setPoint] = useState<PointProps>({x:props.args.point.x, y:props.args.point.y})
-    const [canvas, setCanvas ] = useState<fabric.Canvas>(initCanvas(canvasWidth, canvasHeight, imageData, point, pointColor))
-    
-    canvas.on('mouse:down', (options):void => {   
-        setPoint({...point, x:options.e.clientX, y:options.e.clientY})
-        console.log(point)
-    });
-    
+
+    const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) =>{
+        setPoint({...point, x:e.clientX, y:e.clientY})
+    }
+
     useEffect(() => {
-        setCanvas(initCanvas(canvasWidth, canvasHeight, imageData, point, pointColor))
+        const canvasObj = canvasRef.current;
+        const context = canvasObj!.getContext("2d");
+        const idata = context!.createImageData(canvasWidth, canvasHeight)
+        idata.data.set(imageData)
+        context!.putImageData(idata, 0, 0)
+        context!.fillStyle = pointColor;
+        context!.fillRect(point.x, point.y, 3, 3)
+        
         Streamlit.setFrameHeight()
         Streamlit.setComponentValue({x:point.x, y:point.y});
     }, [point, imageData])
     
     return (
-        <>
+        <div>
             <canvas
-                id="canvas"
-                className={mode === "dark" ? styles.dark : ""}
-                width={canvasWidth}
-                height={canvasHeight}
+                ref={canvasRef}
+                onClick={(e)=>{handleCanvasClick(e)}}
+                width = {canvasWidth}
+                height = {canvasHeight}
             />
-        </>
+        </div>
     )
 }
 

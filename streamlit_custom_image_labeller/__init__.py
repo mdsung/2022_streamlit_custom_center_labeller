@@ -19,7 +19,7 @@ else:
 
 
 def st_custom_image_labeller(
-    resized_img, point_color="blue", point=None, key=None
+    resized_img, point_color="red", point=None, key=None
 ):
     """Create a new instance of "st_img_label".
     Parameters
